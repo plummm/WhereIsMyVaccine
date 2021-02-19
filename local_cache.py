@@ -53,7 +53,7 @@ def removeUser(chat_id):
     try:
         os.remove(path)
     except:
-        print("Fail to delte file: {}".format(path))
+        print("Fail to delete file: {}".format(path))
     ids = readFromChatIdCache("./chat_id")
     new_ids = []
     for each in ids:

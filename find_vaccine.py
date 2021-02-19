@@ -14,12 +14,12 @@ class Docter(TelegHelper):
         url = 'https://curative.com/sites/{}'.format(id)
         message = '{} has slots left: {}'.format(name, url)
         self.SendMessage(chat_id, message)
-        print("{}: {}".format(chat_id, message))
+        self.logger.info("{}: {}".format(chat_id, message))
 
     def any_slots_available(self, windows):
         for window in windows:
             if window['status'] == 'Active' and window['slots_available'] > 0:
-                print(window['end_time'], window['slots_available'])
+                self.logger.info("{} {}".format(window['end_time'], window['slots_available']))
                 return True
         return False
 
@@ -53,9 +53,10 @@ class Docter(TelegHelper):
             location = sym['location']
             radius = sym['radius']
             chat_id = sym['chat_id']
+            self.logger.info("Monitoring for {}".format(chat_id))
             x = threading.Thread(target=self.search_vaccine, args=(location, radius, chat_id,))
             x.start()
-            time.sleep(5)
+            time.sleep(10)
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
