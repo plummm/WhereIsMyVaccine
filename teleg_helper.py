@@ -14,13 +14,14 @@ class TelegHelper():
     StatusAddRadius = 2
     StatusKill = 3
 
-    def __init__(self, token) -> None:
+    def __init__(self, token, boss_id) -> None:
         self.timeout = {}
         self.gSym = {}
         self.gChatId = []
         self.userStatus = {}
         self.vaccine_log = {}
         self.symCachePath = {}
+        self.boss_id = int(boss_id)
         self.queue = queue.Queue()
         self.nomi = pgeocode.Nominatim('us')
         self.updater = Updater(token=token, use_context=True)
@@ -29,6 +30,7 @@ class TelegHelper():
         self.AddCommandHandler("start", self.CommandStart)
         self.AddCommandHandler("remove_from_watchlist", self.CommandRemoveFromWatchList)
         self.AddCommandHandler("show_latest_result", self.CommandShowWatchlist)
+        self.AddCommandHandler("source_code", self.CommandSourceCode)
         self.AddMessageHandler(self.MessageUnknowText)
         self.initCache()
     
@@ -37,17 +39,18 @@ class TelegHelper():
         self.symCachePath[chat_id] = "./sym-"+str(chat_id)
         self._getLocalSym(chat_id)
         self.userStatus[chat_id] = TelegHelper.StatusNone
-        self.timeout[chat_id] = 30
+        self.timeout[chat_id] = 60*2
 
     def initCache(self):
         ids = self._getLocalChatId()
         for a_id in ids:
             if a_id not in self.gChatId:
                 self.initNewUser(a_id)
+                print("Monitoring for {}".format(a_id))
     
     def CommandStart(self, update, context):
         chat_id = update.effective_chat.id
-        print(chat_id)
+        print("new start: {}".format(chat_id))
         if chat_id not in self.gChatId:
             self.initNewUser(chat_id)
             local_cache.writeToChatIdCache("./chat_id", chat_id)
@@ -67,7 +70,7 @@ class TelegHelper():
             return
         user_id = update.effective_user.id
         if user_id not in self.userStatus:
-            self.SendMessage(chat_id, "You shouldn't reply other's query", reply_to_message_id=chat_id)
+            self.SendMessage(chat_id, "You shouldn't reply other's query")
             return
         if not self._isChatRegistered(chat_id):
             return
@@ -94,7 +97,11 @@ class TelegHelper():
             except:
                 self.SendMessage(chat_id, "Invalid radius")
         if update.message.text == "BuyMeOrange":
-            self.timeout[chat_id] = 2*60
+            self.timeout[chat_id] = 1*60
+        if update.message.text[:11] == "GlobalCall:" and chat_id == self.boss_id:
+            global_message = update.message.text[11:]
+            for each in self.gChatId:
+                self.SendMessage(each, global_message)
     
     def AddCommandHandler(self, str, func):
         handler = CommandHandler(str, func)
@@ -114,6 +121,10 @@ class TelegHelper():
     def CommandShowWatchlist(self, update, context):
         chat_id = update.effective_chat.id
         self.SendMessage(chat_id, self.vaccine_log[chat_id])
+    
+    def CommandSourceCode(self, update, context):
+        chat_id = update.effective_chat.id
+        self.SendMessage(chat_id, "Find me at https://github.com/plummm/WhereIsMyVaccine")
 
     def PutQueue(self, sym):
         if 'radius' in sym and 'location' in sym and 'chat_id' in sym:

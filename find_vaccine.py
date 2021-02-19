@@ -2,34 +2,39 @@ import requests
 import sys
 import threading
 import time
+import datetime
 
 from teleg_helper import TelegHelper
 
 class Docter(TelegHelper):
-    def __init__(self, token) -> None:
-        super().__init__(token)
+    def __init__(self, token, boss_id) -> None:
+        super().__init__(token, boss_id)
 
     def notify(self, id, name, chat_id):
         url = 'https://curative.com/sites/{}'.format(id)
         message = '{} has slots left: {}'.format(name, url)
         self.SendMessage(chat_id, message)
+        print("{}: {}".format(chat_id, message))
 
     def any_slots_available(self, windows):
         for window in windows:
-            if window['public_slots_available'] > 0 or window['slots_available'] > 0:
+            if window['status'] == 'Active' and window['slots_available'] > 0:
+                print(window['end_time'], window['slots_available'])
                 return True
         return False
 
 
     def monitor_vaccine_site(self, sites, chat_id):
-        self.vaccine_log[chat_id] = ""
+        now = datetime.datetime.now()
+        date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+        self.vaccine_log[chat_id] = date_time + "\n"
         for site in sites:
             for service in site['services']:
-                if 'vaccine' in service:
+                if 'vaccine' in service.lower():
                     if self.any_slots_available(site['appointment_windows']):
                         self.notify(site['id'], site['name'], chat_id)
                     else:
-                        self.vaccine_log[chat_id] += "{} has no vaccine left".format(site['name'])
+                        self.vaccine_log[chat_id] += "{} has no vaccine left\n".format(site['name'])
                     break
 
 
@@ -50,11 +55,12 @@ class Docter(TelegHelper):
             chat_id = sym['chat_id']
             x = threading.Thread(target=self.search_vaccine, args=(location, radius, chat_id,))
             x.start()
+            time.sleep(5)
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: find_vaccine TOKEN")
+    if len(sys.argv) != 3:
+        print("Usage: find_vaccine TOKEN boss_id")
         exit(0)
 
-    doc = Docter(sys.argv[1])
-    bot = doc.engine()
+    doc = Docter(sys.argv[1], sys.argv[2])
+    doc.engine()
