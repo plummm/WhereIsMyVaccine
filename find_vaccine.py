@@ -3,6 +3,7 @@ import sys
 import threading
 import time
 import datetime
+import h3
 
 from teleg_helper import TelegHelper
 
@@ -39,19 +40,28 @@ class Docter(TelegHelper):
 
 
     def search_vaccine(self, location, radius, chat_id):
-        while self.userStatus[chat_id] != TelegHelper.StatusKill:
-            url = 'https://labtools.curativeinc.com/api/v1/testing_sites/get_by_geolocation?h3={}&radius={}'.format(location,
-                                                                                                                    radius)
-            req = requests.request(method='GET', url=url)
-            sites = req.json()
-            self.monitor_vaccine_site(sites, chat_id)
-            lines = self.vaccine_log[chat_id].split('\n')
-            if len(lines) == 2 and lines[1]=="":
-                self.SendMessage(chat_id, "There is no vaccination sites in your area round {} miles".format(radius))
-                self.SendMessage(chat_id, "Using a bigger radius may help, but it doesn't cover all sites in the given radius due to the maximum number of sites for each query")
-                self.SendMessage(chat_id, "You may change to a nearby zip code where has a vaccination site(NOT TEST ONLY SITE), the information can be found at https://curative.com/sites")
-                self.userStatus[chat_id] = TelegHelper.StatusKill
-            time.sleep(self.timeout[chat_id])
+        try:
+            while self.userStatus[chat_id] != TelegHelper.StatusKill:
+                url = 'https://labtools.curativeinc.com/api/v1/testing_sites/get_by_geolocation?h3={}&radius={}'.format(location,
+                                                                                                                        radius)
+                req = requests.request(method='GET', url=url)
+                sites = req.json()
+                self.monitor_vaccine_site(sites, chat_id)
+                lines = self.vaccine_log[chat_id].split('\n')
+                if len(lines) == 2 and lines[1]=="":
+                    coordinates = h3.h3_to_geo(location)
+                    if len(coordinates) == 2:
+                        url = "https://curative.com/sites#10/{}/{}".format(coordinates[0], coordinates[1])
+                    else:
+                        url = "https://curative.com/search"
+                    self.SendMessage(chat_id, "There is no vaccination sites in your area round {} miles".format(radius))
+                    self.SendMessage(chat_id, "Using a bigger radius may help, but it doesn't cover all sites in the area due to the maximum number of sites for each query")
+                    self.SendMessage(chat_id, "You may change to a nearby zip code where has a vaccination site(NOT TEST ONLY SITE), the information can be found at {}".format(url))
+                    self.userStatus[chat_id] = TelegHelper.StatusKill
+                time.sleep(self.timeout[chat_id])
+        except Exception as e:
+            self.logger.info("{}: An unexpected error occur at search_vaccine(): {}".format(chat_id, e))
+        self.logger.info("{} exits".format(chat_id))
 
     def engine(self):
         while True:

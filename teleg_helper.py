@@ -111,8 +111,8 @@ class TelegHelper():
                 self.PutQueue(self.gSym[chat_id])
             except:
                 self.SendMessage(chat_id, "Invalid radius")
-        if update.message.text == "BuyMeOrange":
-            self.timeout[chat_id] = 1*60
+        #if update.message.text == "BuyMeOrange":
+        #    self.timeout[chat_id] = 1*60
         if update.message.text[:11] == "GlobalCall:" and chat_id == self.boss_id:
             global_message = update.message.text[11:]
             for each in self.gChatId:
@@ -179,6 +179,7 @@ class TelegHelper():
     def SendMessage(self, chat_id, message):
         try:
             self.updater.bot.send_message(chat_id=chat_id, text=message)
+            self.logger.info("Send message \"{}\" to {}".format(message, chat_id))
         except Exception as e:
             self.logger.info("exception occurs at chat {}: {}".format(chat_id, e))
     
