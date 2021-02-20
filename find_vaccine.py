@@ -24,7 +24,6 @@ class Docter(TelegHelper):
                 return True
         return False
 
-
     def monitor_vaccine_site(self, sites, chat_id):
         now = datetime.datetime.now()
         date_time = now.strftime("%m/%d/%Y, %H:%M:%S")

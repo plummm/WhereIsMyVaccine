@@ -33,6 +33,7 @@ class TelegHelper():
         self.AddCommandHandler("remove_from_watchlist", self.CommandRemoveFromWatchList)
         self.AddCommandHandler("show_latest_result", self.CommandShowWatchlist)
         self.AddCommandHandler("source_code", self.CommandSourceCode)
+        self.AddCommandHandler("help", self.CommandHelp)
         self.AddMessageHandler(self.MessageUnknowText)
         self.AddCallbackQueryHandler(self.CallbackResult)
         self.initLogger()
@@ -148,6 +149,15 @@ class TelegHelper():
     def CommandSourceCode(self, update, context):
         chat_id = update.effective_chat.id
         self.SendMessage(chat_id, "Find me at https://github.com/plummm/WhereIsMyVaccine")
+
+    def CommandHelp(self, update, context):
+        help_message = "This bot helps monitor any available slots for vaccine in USA, it bases on data from https://curative.com/\n\n\
+zip code - You need to provide a zip code for seeking any nearby vaccination sites\n\
+radius in miles - radius defines the range of seeking. A bigger radius may help (recommend at least 30 miles).\n\n\
+Some cities don't have vaccination sites so far. eg. San Diego doesn't have any sites for vaccination, but Los Angeles has tons of them. You may need to search around the sites near you, and monitor it with this bot.\n\n\
+For any issues, post them on the github page. You can find the link by invoking /source_code"
+        chat_id = update.effective_chat.id
+        self.SendMessage(chat_id, help_message)
 
     def CallbackResult(self, update, context):
         query = update.callback_query
