@@ -45,6 +45,12 @@ class Docter(TelegHelper):
             req = requests.request(method='GET', url=url)
             sites = req.json()
             self.monitor_vaccine_site(sites, chat_id)
+            lines = self.vaccine_log[chat_id].split('\n')
+            if len(lines) == 2 and lines[1]=="":
+                self.SendMessage(chat_id, "There is no vaccination sites in your area round {} miles".format(radius))
+                self.SendMessage(chat_id, "Using a bigger radius may help, but it doesn't cover all sites in the given radius due to the maximum number of sites for each query")
+                self.SendMessage(chat_id, "You may change to a nearby zip code where has a vaccination site(NOT TEST ONLY SITE), the information can be found at https://curative.com/sites")
+                self.userStatus[chat_id] = TelegHelper.StatusKill
             time.sleep(self.timeout[chat_id])
 
     def engine(self):

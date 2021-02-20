@@ -65,6 +65,10 @@ class TelegHelper():
         if chat_id not in self.gChatId:
             self.initNewUser(chat_id)
             local_cache.writeToChatIdCache("./chat_id", chat_id)
+        else:
+            self.userStatus[chat_id] = TelegHelper.StatusKill
+            local_cache.removeUser(chat_id)
+            self.gChatId.remove(chat_id)
         self.SetupZipcode(chat_id)
     
     def SetupZipcode(self, chat_id):
@@ -175,8 +179,8 @@ class TelegHelper():
     def SendMessage(self, chat_id, message):
         try:
             self.updater.bot.send_message(chat_id=chat_id, text=message)
-        except:
-            self.logger.info("exception occurs at chat {}".format(chat_id))
+        except Exception as e:
+            self.logger.info("exception occurs at chat {}: {}".format(chat_id, e))
     
     def _getLocalChatId(self):
         ids = local_cache.readFromChatIdCache("./chat_id")
