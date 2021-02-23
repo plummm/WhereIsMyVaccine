@@ -21,8 +21,10 @@ class TelegHelper():
         self.gSym = {}
         self.gChatId = []
         self.userStatus = {}
+        self.userThread = {}
         self.vaccine_log = {}
         self.symCachePath = {}
+        self.threadIndex = 0
         self.boss_id = int(boss_id)
         self.queue = queue.Queue()
         self.nomi = pgeocode.Nominatim('us')
@@ -44,7 +46,7 @@ class TelegHelper():
         self.symCachePath[chat_id] = "./sym-"+str(chat_id)
         self._getLocalSym(chat_id)
         self.userStatus[chat_id] = TelegHelper.StatusNone
-        self.timeout[chat_id] = 60*2
+        self.timeout[chat_id] = 60*3
     
     def initLogger(self):
         self.logger = logging.getLogger("BotLogger")
@@ -69,7 +71,6 @@ class TelegHelper():
         else:
             self.userStatus[chat_id] = TelegHelper.StatusKill
             local_cache.removeUser(chat_id)
-            self.gChatId.remove(chat_id)
         self.SetupZipcode(chat_id)
     
     def SetupZipcode(self, chat_id):
@@ -94,7 +95,7 @@ class TelegHelper():
         if self.userStatus[user_id] == TelegHelper.StatusAddZipcode:
             self.userStatus[user_id] = self.StatusNone
             val = self.Zipcode2url(update.message.text)
-            if val == None:
+            if val == None or val == 0:
                 self.SendMessage(chat_id, "Invalid zipcode: {}".format(update.message.text))
                 return
             self.gSym[chat_id]['location'] = val
@@ -167,6 +168,8 @@ For any issues, post them on the github page. You can find the link by invoking 
     def PutQueue(self, sym):
         if 'radius' in sym and 'location' in sym and 'chat_id' in sym:
             local_cache.writeToSymsCache(self.symCachePath[sym['chat_id']], sym)
+            self.userThread[sym['chat_id']] = self.threadIndex
+            self.threadIndex += 1
             self.queue.put(sym)
 
     def Zipcode2url(self, zipcode):
